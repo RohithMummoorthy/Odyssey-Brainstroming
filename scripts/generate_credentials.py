@@ -27,7 +27,9 @@ from app.models.db import get_supabase
 # ---------------------------------------------------------------------------
 # Constants
 # ---------------------------------------------------------------------------
-NUM_TEAMS = 500
+# To increase the total allowed teams in the future, simply change this
+# number to 500 (or anything) and then safely re-run this script!
+NUM_TEAMS = 200
 PIN_LENGTH = 6
 PIN_CHARS = string.ascii_uppercase + string.digits   # A-Z 0-9
 CSV_PATH = Path(__file__).resolve().parent.parent / "credentials.csv"
@@ -48,7 +50,7 @@ def hash_pin(pin: str) -> str:
     return bcrypt.hashpw(pin.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
 
 
-def build_rows(num: int) -> list[dict]:
+def build_rows(num: int) -> tuple[list[dict], list[dict]]:
     """Build a list of team dicts with hashed PINs, plus plaintext for CSV."""
     rows_db = []       # will go to Supabase
     rows_csv = []      # plaintext — credential sheet for participants
@@ -76,7 +78,15 @@ def build_rows(num: int) -> list[dict]:
 
 
 def upload_to_supabase(sb, rows_db: list[dict]) -> None:
-    """Upload rows in batches, skipping teams that already exist."""
+    """Wipe existing teams and upload rows in batches."""
+    print("WARNING: Wiping all existing teams from the database to strictly provision the correct count...")
+    try:
+        sb.table("audit_logs").delete().neq("id", 0).execute()
+        sb.table("sessions").delete().neq("team_id", "0").execute()
+        sb.table("teams").delete().neq("team_id", "0").execute()
+    except Exception as exc:
+        print(f"Failed to wipe old data: {exc}")
+
     print(f"\nUploading {len(rows_db)} teams to Supabase in batches of {BATCH_SIZE}…")
     inserted = 0
 
@@ -92,12 +102,12 @@ def upload_to_supabase(sb, rows_db: list[dict]) -> None:
             print(f"  Uploaded rows {start + 1}–{start + len(batch)}")
         except Exception as exc:
             print(
-                f"  ✗  Batch {start + 1}–{start + len(batch)} failed: {exc}",
+                f"  [ERROR] Batch {start + 1}–{start + len(batch)} failed: {exc}",
                 file=sys.stderr,
             )
             raise
 
-    print(f"\n  ✓  {inserted} team rows upserted to Supabase.")
+    print(f"\n  [OK] {inserted} team rows upserted to Supabase.")
 
 
 def write_csv(rows_csv: list[dict]) -> None:
@@ -106,7 +116,7 @@ def write_csv(rows_csv: list[dict]) -> None:
         writer = csv.DictWriter(f, fieldnames=["team_id", "pin"])
         writer.writeheader()
         writer.writerows(rows_csv)
-    print(f"\n  ✓  Plaintext credentials saved to: {CSV_PATH}")
+    print(f"\n  [OK] Plaintext credentials saved to: {CSV_PATH}")
 
 
 # ---------------------------------------------------------------------------
@@ -125,7 +135,7 @@ def main() -> None:
     upload_to_supabase(sb, rows_db)
     write_csv(rows_csv)
 
-    print("\n✅  Done. Distribute credentials.csv to participants.")
+    print("\n[DONE] Distribute credentials.csv to participants.")
 
 
 if __name__ == "__main__":
