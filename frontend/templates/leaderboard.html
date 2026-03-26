@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Live Leaderboard — Math Quiz</title>
+  <style>
+    /* ── Tokens ────────────────────────────────── */
+    :root {
+      --bg-overlay: rgba(12, 14, 20, 0.6);
+      --glass-bg:   rgba(255, 255, 255, 0.05);
+      --glass-border: rgba(255, 255, 255, 0.1);
+      --accent:  #ff8c42;
+      --gold:    #fbbf24;
+      --silver:  #94a3b8;
+      --bronze:  #b45309;
+      --success: #10b981;
+      --warn:    #f59e0b;
+      --text:    #ffffff;
+      --muted:   #cbd5e1;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { 
+      width: 100%; height: 100%; 
+      overflow: hidden; 
+    }
+    body {
+      width: 100%; height: 100%;
+      margin: 0;
+      background: #080a10;
+      color: var(--text);
+      font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Header ──────────────────────────────────── */
+    .lb-header {
+      text-align: center;
+      padding: 2.5rem 2rem 1.5rem;
+      border-bottom: 1px solid var(--glass-border);
+      background: var(--glass-bg);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      flex-shrink: 0;
+      box-shadow: 0 4px 30px rgba(0,0,0,0.1);
+    }
+
+    .lb-title {
+      font-size: clamp(2rem, 5vw, 4rem);
+      font-weight: 900;
+      letter-spacing: -0.03em;
+      background: linear-gradient(135deg, var(--accent), #ff6b6b);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-shadow: 0 4px 15px rgba(255, 140, 66, 0.2);
+    }
+
+    .lb-subtitle {
+      font-size: clamp(1rem, 2.5vw, 1.6rem);
+      color: var(--text);
+      opacity: 0.9;
+      margin-top: 0.4rem;
+      font-weight: 600;
+      text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+    }
+
+    /* ── Status bar ──────────────────────────────── */
+    .status-bar {
+      text-align: center;
+      padding: 1rem 2rem;
+      font-size: clamp(1rem, 2.5vw, 1.5rem);
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      border-bottom: 1px solid var(--glass-border);
+      background: rgba(0, 0, 0, 0.4);
+      backdrop-filter: blur(12px);
+      flex-shrink: 0;
+    }
+
+    .status-waiting  { color: var(--muted);   }
+    .status-running  { color: var(--warn);     animation: pulse 2s infinite; text-shadow: 0 0 10px rgba(245,158,11,0.4); }
+    .status-ended    { color: var(--success);  text-shadow: 0 0 10px rgba(16,185,129,0.4); }
+
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.6} }
+
+    /* ── Leaderboard table ───────────────────────── */
+    .lb-body {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      padding: 2rem 3vw;
+      overflow-y: auto;
+    }
+
+    .lb-table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0 8px;
+    }
+
+    /* Column widths */
+    .col-rank { width: 10%; }
+    .col-name { width: 45%; }
+    .col-score{ width: 25%; text-align: center; }
+    .col-time { width: 20%; text-align: right; }
+
+    .lb-table thead th {
+      font-size: clamp(0.8rem, 1.8vw, 1.2rem);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text);
+      opacity: 0.8;
+      padding: 0.5rem 1rem 1rem 1rem;
+    }
+
+    .lb-table tbody tr {
+      background: rgba(255, 255, 255, 0.03);
+      backdrop-filter: blur(10px);
+      transition: background 0.2s, transform 0.2s, box-shadow 0.2s;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+    
+    .lb-table tbody tr td:first-child { border-top-left-radius: 12px; border-bottom-left-radius: 12px; }
+    .lb-table tbody tr td:last-child { border-top-right-radius: 12px; border-bottom-right-radius: 12px; }
+
+    .lb-table tbody tr:hover { 
+      background: rgba(255, 255, 255, 0.1); 
+      transform: translateY(-2px) scale(1.005);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+    }
+
+    .lb-table td {
+      padding: 1.25rem 1rem;
+      vertical-align: middle;
+      border-top: 1px solid var(--glass-border);
+      border-bottom: 1px solid var(--glass-border);
+    }
+    .lb-table tbody tr td:first-child { border-left: 1px solid var(--glass-border); }
+    .lb-table tbody tr td:last-child { border-right: 1px solid var(--glass-border); }
+
+    /* Rank medals */
+    .rank-cell {
+      font-size: clamp(1.5rem, 4vw, 3rem);
+      font-weight: 900;
+      text-align: center;
+    }
+    .rank-1 { color: var(--gold); }
+    .rank-2 { color: var(--silver); }
+    .rank-3 { color: var(--bronze); }
+    .rank-n { color: var(--muted); font-size: clamp(1.2rem, 3vw, 2.2rem); }
+
+    /* Team name */
+    .team-name {
+      font-size: clamp(1.2rem, 3vw, 2.2rem);
+      font-weight: 700;
+    }
+
+    /* Score pill */
+    .score-pill {
+      display: inline-flex;
+      align-items: baseline;
+      gap: 0.2em;
+      background: rgba(255, 140, 66, 0.15);
+      border: 1px solid rgba(255, 140, 66, 0.4);
+      border-radius: 9999px;
+      padding: 0.3em 0.9em;
+      box-shadow: 0 0 10px rgba(255, 140, 66, 0.2);
+    }
+    .score-big {
+      font-size: clamp(1.4rem, 3.5vw, 2.8rem);
+      font-weight: 900;
+      color: var(--accent);
+      text-shadow: 0 0 15px rgba(255,140,66,0.3);
+    }
+    .score-total {
+      font-size: clamp(0.9rem, 2vw, 1.6rem);
+      color: var(--muted);
+      font-weight: 500;
+    }
+
+    /* Time */
+    .time-cell {
+      font-size: clamp(1rem, 2.5vw, 1.8rem);
+      color: var(--muted);
+      font-weight: 600;
+      text-align: right;
+    }
+
+    /* ── Empty state ────────────────────────────── */
+    .lb-empty {
+      text-align: center;
+      padding: 4rem;
+      color: var(--muted);
+      font-size: clamp(1.2rem, 3vw, 2rem);
+    }
+
+    /* ── Footer ────────────────────────────────── */
+    .lb-footer {
+      text-align: center;
+      padding: 1rem 2rem;
+      font-size: clamp(0.75rem, 1.5vw, 1rem);
+      color: var(--muted);
+      border-top: 1px solid var(--glass-border);
+      background: var(--glass-bg);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      flex-shrink: 0;
+    }
+
+    #refreshCountdown { font-weight: 700; color: var(--accent); }
+  </style>
+</head>
+<body>
+
+<!-- ── Header ──────────────────────────────────────── -->
+<div class="lb-header">
+  <div class="lb-title">∑ MathQuiz</div>
+  <div class="lb-subtitle" id="statsLine">Live Leaderboard</div>
+</div>
+
+<!-- ── Status bar ──────────────────────────────────── -->
+<div class="status-bar" id="statusBar">Loading…</div>
+
+<!-- ── Leaderboard body ─────────────────────────────── -->
+<div class="lb-body">
+  <table class="lb-table" id="lbTable">
+    <thead>
+      <tr>
+        <th class="col-rank">Rank</th>
+        <th class="col-name">Team</th>
+        <th class="col-score">Score</th>
+        <th class="col-time">Time Taken</th>
+      </tr>
+    </thead>
+    <tbody id="lbBody">
+      <tr><td colspan="4" class="lb-empty">Loading results…</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ── Footer ──────────────────────────────────────── -->
+<div class="lb-footer">
+  Auto-refreshing in <span id="refreshCountdown">10</span>s &nbsp;·&nbsp;
+  <span id="lastUpdate"></span>
+</div>
+
+<script>
+'use strict';
+
+const REFRESH_INTERVAL = 10;  // seconds
+let _countdown = REFRESH_INTERVAL;
+let _countdownId = null;
+
+const MEDALS = ['🥇', '🥈', '🥉'];
+
+async function fetchData() {
+  try {
+    const res  = await fetch('/api/leaderboard');
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    return await res.json();
+  } catch (e) {
+    console.error('Leaderboard fetch error:', e);
+    return null;
+  }
+}
+
+function renderStatus(data) {
+  const bar      = document.getElementById('statusBar');
+  const statsEl  = document.getElementById('statsLine');
+  const { event_status, submitted, active, total } = data;
+
+  if (event_status === 'waiting' || event_status === '' || !event_status) {
+    bar.className    = 'status-bar status-waiting';
+    bar.textContent  = '⏳ Waiting to start…';
+    statsEl.textContent = 'The event has not begun yet.';
+  } else if (event_status === 'running' || active > 0) {
+    bar.className    = 'status-bar status-running';
+    bar.textContent  = `🟡 Event in progress — ${submitted} of ${total} teams submitted`;
+    statsEl.textContent = `${active} teams still active`;
+  } else {
+    bar.className    = 'status-bar status-ended';
+    bar.textContent  = `✅ Event ended — ${submitted} teams completed`;
+    statsEl.textContent = `Final results`;
+  }
+}
+
+function formatTime(mins) {
+  if (mins === null || mins === undefined) return '—';
+  const m = Math.floor(mins);
+  const s = Math.round((mins - m) * 60);
+  return `${m}m ${s.toString().padStart(2,'0')}s`;
+}
+
+function renderTable(leaders) {
+  const tbody = document.getElementById('lbBody');
+  if (!leaders || !leaders.length) {
+    tbody.innerHTML = `<tr><td colspan="4" class="lb-empty">No submissions yet.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = leaders.map((row, i) => {
+    const medal     = MEDALS[i] || null;
+    const rankClass = i === 0 ? 'rank-1' : i === 1 ? 'rank-2' : i === 2 ? 'rank-3' : 'rank-n';
+    const rankHTML  = medal
+      ? `<div class="rank-cell ${rankClass}">${medal}</div>`
+      : `<div class="rank-cell ${rankClass}">${row.rank}</div>`;
+
+    return `
+      <tr>
+        <td>${rankHTML}</td>
+        <td><div class="team-name">${escHtml(row.team_name || row.team_id)}</div></td>
+        <td>
+          <div style="text-align:center">
+            <span class="score-pill">
+              <span class="score-big">${row.score}</span>
+              <span class="score-total">/30</span>
+            </span>
+          </div>
+        </td>
+        <td><div class="time-cell">${formatTime(row.time_taken)}</div></td>
+      </tr>`;
+  }).join('');
+}
+
+function escHtml(s) {
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+async function refresh() {
+  const data = await fetchData();
+  if (data) {
+    renderStatus(data);
+    renderTable(data.leaders || []);
+    document.getElementById('lastUpdate').textContent =
+      'Updated ' + new Date().toLocaleTimeString();
+  }
+}
+
+function startCountdown() {
+  _countdown = REFRESH_INTERVAL;
+  clearInterval(_countdownId);
+  _countdownId = setInterval(() => {
+    _countdown--;
+    const el = document.getElementById('refreshCountdown');
+    if (el) el.textContent = _countdown;
+    if (_countdown <= 0) {
+      clearInterval(_countdownId);
+      refresh().then(startCountdown);
+    }
+  }, 1000);
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+  refresh().then(startCountdown);
+});
+</script>
+<script src="/static/js/math_bg.js"></script>
+</body>
+</html>

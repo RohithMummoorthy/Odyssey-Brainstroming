@@ -1,0 +1,24 @@
+# Web server
+flask==3.0.3
+flask-cors==4.0.1
+gunicorn==23.0.0
+
+# Supabase
+supabase==2.5.1
+
+# Auth / hashing
+bcrypt==4.1.3
+PyJWT==2.8.0
+
+# Background scheduler (timer auto-submit)
+APScheduler==3.10.4
+
+# Google Sheets export
+gspread==6.1.2
+google-auth==2.29.0
+
+# HTTP (stress test + setup scripts)
+requests==2.32.3
+
+# Environment
+python-dotenv==1.0.1

@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Team Login — Math Quiz</title>
+  <style>
+    /* ── Reset & base ───────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg-overlay: rgba(15, 17, 23, 0.6);
+      --glass-bg:   rgba(255, 255, 255, 0.05);
+      --glass-border: rgba(255, 255, 255, 0.1);
+      --accent:    #ff8c42; /* vibrant orange/coral */
+      --accent-h:  #ffa066;
+      --danger:    #ff4f6d;
+      --warn:      #ffb547;
+      --text:      #ffffff;
+      --muted:     #b0b3c6;
+      --radius:    16px;
+      --shadow:    0 8px 32px rgba(0,0,0,0.5);
+    }
+
+    html { height: 100%; }
+    body {
+      min-height: 100%;
+      margin: 0;
+      background: #080a10;
+      color: var(--text);
+      font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* ── Card ───────────────────────────────────────────────────────── */
+    .card {
+      width: 100%;
+      max-width: 420px;
+      padding: 2.5rem 2.5rem;
+      background: var(--glass-bg);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      animation: fadeUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(18px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── Header ─────────────────────────────────────────────────────── */
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      margin-bottom: 1.75rem;
+    }
+    .logo-icon {
+      width: 40px; height: 40px;
+      background: linear-gradient(135deg, var(--accent), #a78bfa);
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.3rem;
+    }
+    .logo-text { font-size: 1.1rem; font-weight: 700; letter-spacing: -0.02em; }
+    .logo-sub  { font-size: 0.75rem; color: var(--muted); margin-top: 1px; }
+
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      margin-bottom: 0.25rem;
+    }
+    .subtitle {
+      font-size: 0.85rem;
+      color: var(--muted);
+      margin-bottom: 1.75rem;
+    }
+
+    /* ── Form ───────────────────────────────────────────────────────── */
+    .field { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1.25rem; }
+
+    label {
+      font-size: 0.8rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #e0e0e0;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+    }
+
+    input {
+      padding: 0.8rem 1rem;
+      background: rgba(0, 0, 0, 0.2);
+      backdrop-filter: blur(4px);
+      border: 1px solid var(--glass-border);
+      border-radius: 10px;
+      color: var(--text);
+      font-size: 1.05rem;
+      transition: border-color 0.3s, box-shadow 0.3s, background 0.3s;
+      outline: none;
+    }
+    input:focus {
+      background: rgba(0, 0, 0, 0.4);
+      border-color: var(--accent);
+      box-shadow: 0 0 15px rgba(255, 140, 66, 0.3);
+    }
+    input::placeholder { color: var(--muted); opacity: 0.8; }
+    input:disabled     { opacity: 0.5; cursor: not-allowed; }
+
+    /* ── Show/hide PIN ──────────────────────────────────────────────── */
+    .pin-wrapper { position: relative; }
+    .pin-wrapper input { padding-right: 2.8rem; width: 100%; }
+    #togglePin {
+      position: absolute; right: 0.85rem; top: 50%;
+      transform: translateY(-50%);
+      background: none; border: none; cursor: pointer;
+      color: var(--muted); font-size: 1.1rem; padding: 0;
+      transition: color 0.2s, transform 0.2s;
+    }
+    #togglePin:hover { color: var(--text); transform: translateY(-50%) scale(1.1); }
+
+    /* ── Button ─────────────────────────────────────────────────────── */
+    .btn {
+      width: 100%;
+      margin-top: 0.75rem;
+      padding: 0.85rem;
+      background: linear-gradient(135deg, var(--accent), #ff6b6b);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      font-size: 1.05rem;
+      font-weight: 700;
+      cursor: pointer;
+      letter-spacing: 0.02em;
+      transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s, background 0.2s;
+      position: relative;
+    }
+    .btn:hover:not(:disabled)  { 
+      box-shadow: 0 8px 25px rgba(255, 140, 66, 0.5); 
+      transform: translateY(-2px);
+    }
+    .btn:active:not(:disabled) { transform: scale(0.96) translateY(0); }
+    .btn:disabled              { opacity: 0.6; cursor: not-allowed; transform: none; box-shadow: none; }
+
+    /* Spinner inside button */
+    .btn .spinner {
+      display: none;
+      width: 18px; height: 18px;
+      border: 2.5px solid rgba(255,255,255,0.35);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.65s linear infinite;
+      position: absolute; right: 1rem; top: 50%;
+      transform: translateY(-50%);
+    }
+    .btn.loading .spinner { display: inline-block; }
+    @keyframes spin { to { transform: translateY(-50%) rotate(360deg); } }
+
+    /* ── Error / info banners ───────────────────────────────────────── */
+    .banner {
+      display: none;
+      padding: 0.7rem 0.9rem;
+      border-radius: 8px;
+      font-size: 0.875rem;
+      margin-top: 1rem;
+      border-left: 3px solid;
+      animation: fadeIn 0.2s ease;
+      line-height: 1.45;
+    }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+    .banner.error   { background: rgba(255,79,109,0.12); border-color: var(--danger); color: #ff8fa3; }
+    .banner.warning { background: rgba(255,181,71,0.12); border-color: var(--warn);   color: #ffd080; }
+    .banner.visible { display: block; }
+
+    /* ── Footer ─────────────────────────────────────────────────────── */
+    .footer {
+      margin-top: 1.5rem;
+      font-size: 0.75rem;
+      color: var(--muted);
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+<main class="card" role="main">
+
+  <div class="logo">
+    <div class="logo-icon" aria-hidden="true">∑</div>
+    <div>
+      <div class="logo-text">MathQuiz</div>
+      <div class="logo-sub">Secure Competition Platform</div>
+    </div>
+  </div>
+
+  <h1>Team Login</h1>
+  <p class="subtitle">Enter your credentials to begin the quiz.</p>
+
+  <form id="loginForm" novalidate autocomplete="off">
+
+    <div class="field">
+      <label for="teamId">Team ID</label>
+      <input
+        id="teamId"
+        name="team_id"
+        type="text"
+        placeholder="e.g. TEAM042"
+        maxlength="10"
+        autocomplete="off"
+        spellcheck="false"
+        required
+      />
+    </div>
+
+    <div class="field">
+      <label for="pin">PIN</label>
+      <div class="pin-wrapper">
+        <input
+          id="pin"
+          name="pin"
+          type="password"
+          placeholder="6-character PIN"
+          maxlength="10"
+          autocomplete="off"
+          required
+        />
+        <button type="button" id="togglePin" aria-label="Show/hide PIN" title="Show / hide">👁</button>
+      </div>
+    </div>
+
+    <button type="submit" class="btn" id="loginBtn">
+      Login
+      <span class="spinner" aria-hidden="true"></span>
+    </button>
+
+  </form>
+
+  <!-- Error / warning banners -->
+  <div class="banner error"   id="bannerError"   role="alert" aria-live="polite"></div>
+  <div class="banner warning" id="bannerWarning" role="alert" aria-live="polite"></div>
+
+  <p class="footer">Contact an invigilator if you have trouble logging in.</p>
+
+</main>
+
+<script src="/static/js/login.js"></script>
+<script src="/static/js/math_bg.js"></script>
+</body>
+</html>

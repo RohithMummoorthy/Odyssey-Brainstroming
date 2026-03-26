@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Admin — Math Quiz</title>
+  <link rel="stylesheet" href="/static/css/admin.css"/>
+</head>
+<body>
+
+<!-- ── Login Screen ─────────────────────────────────────────────────────── -->
+<section id="loginScreen">
+  <h1>∑ MathQuiz Admin</h1>
+  <div class="login-card">
+    <p style="color:var(--text-2);font-size:.85rem">Enter admin password to continue.</p>
+    <input type="password" id="adminPwInput" placeholder="Admin password" autocomplete="current-password"/>
+    <p id="loginError">Incorrect password.</p>
+    <button class="btn btn-primary" id="loginBtn">Login</button>
+  </div>
+</section>
+
+<!-- ── Dashboard ─────────────────────────────────────────────────────────── -->
+<div id="dashboard">
+
+  <!-- Top bar -->
+  <div class="topbar">
+    <span class="topbar-brand">∑ MathQuiz Admin</span>
+    <div class="topbar-controls">
+      <span id="eventStatusBadge" class="badge badge-muted">waiting</span>
+      <button class="btn btn-success" id="startEventBtn">▶ Start Event</button>
+      <button class="btn btn-danger"  id="endEventBtn" disabled>■ End Event</button>
+      <button class="btn btn-danger"  id="resetEventBtn" style="margin-left:8px;" title="Reset all scores and start over">↺ Reset Event</button>
+      <button class="btn btn-warn"    id="lockNetBtn">🔒 Lock Network</button>
+      <button class="btn btn-ghost"   id="unlockNetBtn">🔓 Unlock Network</button>
+      <button class="btn btn-primary" id="exportBtn" disabled>↗ Export to Sheets</button>
+    </div>
+  </div>
+
+  <!-- Network bar -->
+  <div class="network-bar">
+    <span>Network:</span>
+    <span id="lockedIpDisplay">unrestricted</span>
+    <div class="refresh-dot" title="Auto-refreshing"></div>
+    <span id="lastRefreshTs" style="margin-left:auto"></span>
+  </div>
+
+  <!-- Dashboard body -->
+  <div class="dash-body">
+
+    <!-- Left: teams table -->
+    <div style="display:flex;flex-direction:column;gap:1.25rem;min-width:0">
+
+      <!-- Teams table card -->
+      <div class="card" style="max-height:520px;overflow:hidden;display:flex;flex-direction:column">
+        <div class="card-header">
+          <span class="card-title">Teams
+            <span id="teamCount" style="margin-left:.5rem;color:var(--muted)"></span>
+          </span>
+          <span style="font-size:.75rem;color:var(--muted)">Click row for audit log</span>
+        </div>
+        <div class="filter-row">
+          <input type="text" id="teamFilter" placeholder="Filter by team ID or name…"/>
+        </div>
+        <div class="card-body" style="flex:1;overflow-y:auto">
+          <table class="teams-table">
+            <thead>
+              <tr>
+                <th>Team ID</th>
+                <th>Name</th>
+                <th>Status</th>
+                <th>Score</th>
+                <th>Q Ans</th>
+                <th>Tabs</th>
+                <th>🔒</th>
+                <th>Re-login</th>
+                <th>Finish</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="teamsBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Re-login requests -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Re-login Requests <span id="reloginCount" class="badge badge-warn" style="display:none"></span></span>
+        </div>
+        <div class="card-body" id="reloginBody">
+          <div class="empty">No pending re-login requests.</div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Right: leaderboard -->
+    <div class="right-panel">
+      <div class="card" style="flex:1">
+        <div class="card-header">
+          <span class="card-title">🏆 Leaderboard</span>
+          <small style="color:var(--muted)">Top 10</small>
+        </div>
+        <div class="card-body" id="leaderboardBody">
+          <div class="empty">No submissions yet.</div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /dash-body -->
+</div><!-- /dashboard -->
+
+<!-- ── Audit Log Modal ────────────────────────────────────────────────────── -->
+<div class="modal-backdrop" id="auditModal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="auditModalTitle">Audit Log</span>
+      <button class="modal-close" id="closeAuditModal">✕</button>
+    </div>
+    <div class="modal-body" id="auditModalBody"></div>
+  </div>
+</div>
+
+<!-- ── Toast ──────────────────────────────────────────────────────────────── -->
+<div id="adminToast"></div>
+
+<script src="/static/js/admin.js"></script>
+</body>
+</html>

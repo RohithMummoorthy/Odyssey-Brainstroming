@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Math Quiz</title>
+  <link rel="stylesheet" href="/static/css/quiz.css?v=2" />
+  <style>
+    /* ── Anti-cheat overlays ── */
+
+    /* Start-quiz overlay (prompts fullscreen entry) */
+    #startOverlay {
+      position: fixed; inset: 0; z-index: 900;
+      background: rgba(15,17,23,0.97);
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 1.5rem; text-align: center; padding: 2rem;
+    }
+    #startOverlay h2 { font-size: 1.6rem; font-weight: 800; color: var(--text); }
+    #startOverlay p  { color: var(--text-2); font-size: 0.95rem; max-width: 420px; line-height: 1.6; }
+    #startQuizBtn {
+      padding: 0.85rem 2.5rem;
+      background: var(--accent); border: none; border-radius: 10px;
+      color: #fff; font-size: 1.05rem; font-weight: 700;
+      cursor: pointer; transition: background 0.2s, box-shadow 0.2s;
+    }
+    #startQuizBtn:hover { background: var(--accent-h); box-shadow: 0 4px 20px rgba(108,99,255,0.4); }
+
+    /* Fullscreen-exit lockout overlay */
+    #acOverlay {
+      display: none;
+      position: fixed; inset: 0; z-index: 1000;
+      background: rgba(10,10,16,0.96);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 1.25rem; text-align: center; padding: 2rem;
+    }
+    #acOverlay.visible { display: flex; }
+    #acOverlay .ac-icon { font-size: 4rem; }
+    #acOverlay h2 { font-size: 1.4rem; font-weight: 800; color: var(--danger); }
+    #acOverlayReason {
+      color: var(--text-2); font-size: 0.95rem;
+      max-width: 380px; line-height: 1.6; white-space: pre-line;
+    }
+    .ac-pulse {
+      width: 12px; height: 12px; border-radius: 50%;
+      background: var(--danger);
+      animation: acpulse 1.2s ease-in-out infinite;
+    }
+    .ac-waiting { color: var(--muted); font-size: 0.82rem; display: flex; align-items: center; gap: 0.5rem; }
+    @keyframes acpulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.4;transform:scale(0.7)} }
+
+    /* Tab-switch toast */
+    #acToast {
+      position: fixed; bottom: 1.5rem; left: 50%; transform: translateX(-50%);
+      background: #2a1f00; border: 1px solid var(--warn); color: var(--warn);
+      padding: 0.65rem 1.2rem; border-radius: 9999px;
+      font-size: 0.85rem; font-weight: 600;
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.3s; z-index: 800;
+      white-space: nowrap;
+    }
+    #acToast.visible { opacity: 1; }
+  </style>
+</head>
+<body>
+
+<!-- ── Start-quiz overlay (requests fullscreen before showing quiz) ──────── -->
+<div id="startOverlay" role="dialog" aria-modal="true" aria-labelledby="startTitle">
+  <div style="font-size:3rem">🔒</div>
+  <h2 id="startTitle">Ready to begin?</h2>
+  <p>
+    This quiz runs in <strong>fullscreen mode</strong>.<br/>
+    Exiting fullscreen will pause your quiz and alert the admin.<br/>
+    Make sure you are connected to the <strong>venue Wi-Fi</strong> before starting.
+  </p>
+  <button id="startQuizBtn">Enter Fullscreen &amp; Start Quiz</button>
+</div>
+
+<!-- ── Fullscreen-exit lockout overlay ─────────────────────────────────── -->
+<div id="acOverlay" role="alertdialog" aria-modal="true" aria-live="assertive">
+  <div class="ac-icon">⚠️</div>
+  <h2>Quiz Paused</h2>
+  <p id="acOverlayReason">You exited fullscreen. Contact the admin to continue.</p>
+  <div class="ac-waiting">
+    <div class="ac-pulse"></div>
+    Waiting for admin to unlock…
+  </div>
+</div>
+
+<!-- ── Tab-switch toast ─────────────────────────────────────────────────── -->
+<div id="acToast" role="status" aria-live="polite"></div>
+
+<!-- ── Header ──────────────────────────────────────────────────────────── -->
+<header class="header" id="quizHeader" style="display:none">
+  <span class="header-brand">∑ MathQuiz</span>
+  <div class="header-info">
+    <span id="teamLabel"></span>
+    <div id="timerDisplay" role="timer" aria-live="polite" aria-label="Time remaining">
+      <span>⏱</span>
+      <span id="timerText">30:00</span>
+    </div>
+  </div>
+</header>
+
+<!-- ── Loading ─────────────────────────────────────────────────────────── -->
+<div id="loadingScreen">
+  <div class="spinner" aria-label="Loading questions…"></div>
+  <p>Loading your questions…</p>
+</div>
+
+<!-- ── Error ───────────────────────────────────────────────────────────── -->
+<div id="errorScreen" style="display:none">
+  <p id="errorMsg">Something went wrong. Please refresh the page.</p>
+</div>
+
+<!-- ── Score screen ────────────────────────────────────────────────────── -->
+<div id="scoreScreen" role="main">
+  <div class="score-badge" style="display:none;">
+    <span class="score-num" id="scoreNum">0</span>
+    <span class="score-denom" id="scoreDenom">/30</span>
+  </div>
+  <h1 class="score-title" style="font-size: 2rem;">You have already finished the quiz.</h1>
+  <p class="score-sub" id="scoreFinishTime"></p>
+  <p class="score-sub" style="margin-top:0.5rem; color:var(--muted); font-size:0.9rem;">
+    Your answers have been successfully recorded. You may safely close this window.
+  </p>
+</div>
+
+<!-- ── Quiz layout ─────────────────────────────────────────────────────── -->
+<div class="quiz-layout" id="quizLayout" style="display:none">
+
+  <!-- Sidebar -->
+  <aside class="sidebar" aria-label="Question navigation">
+    <p class="sidebar-title">Questions</p>
+    <div class="q-grid" id="qGrid" role="list"></div>
+  </aside>
+
+  <!-- Main panel -->
+  <main class="main">
+
+    <!-- Question card -->
+    <div class="q-card" id="questionCard">
+      <p class="q-meta" id="qMeta">Question 1 of 30</p>
+      <p class="q-text" id="qText"></p>
+      <ul class="options-list" id="optionsList" role="listbox"
+          aria-label="Answer options"></ul>
+    </div>
+
+    <!-- Navigation row -->
+    <div class="nav-row">
+      <button class="nav-btn" id="prevBtn" aria-label="Previous question">← Prev</button>
+      <button class="nav-btn" id="nextBtn" aria-label="Next question">Next →</button>
+      <button class="submit-btn" id="submitBtn" style="display:none">Submit Quiz</button>
+    </div>
+
+    <!-- Auto-save indicator -->
+    <p class="save-indicator" id="saveIndicator" aria-live="polite"></p>
+
+  </main>
+</div>
+
+<!-- anti_cheat.js must load BEFORE quiz.js -->
+<script src="/static/js/anti_cheat.js"></script>
+<script src="/static/js/quiz.js"></script>
+<script src="/static/js/math_bg.js"></script>
+</body>
+</html>
+
