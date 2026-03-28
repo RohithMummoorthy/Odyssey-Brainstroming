@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Network Locked — Math Quiz</title>
+  <style>
+    /* ── Reset & base ───────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg-overlay: rgba(15, 17, 23, 0.6);
+      --glass-bg:   rgba(255, 255, 255, 0.05);
+      --glass-border: rgba(255, 255, 255, 0.1);
+      --accent:    #ff8c42;
+      --danger:    #ff4f6d;
+      --text:      #ffffff;
+      --muted:     #b0b3c6;
+      --radius:    16px;
+      --shadow:    0 8px 32px rgba(0,0,0,0.5);
+    }
+
+    html { height: 100%; }
+    body {
+      min-height: 100%;
+      margin: 0;
+      background: #080a10;
+      color: var(--text);
+      font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+    }
+
+    .card {
+      width: 100%;
+      max-width: 480px;
+      padding: 3.5rem 2.5rem;
+      background: var(--glass-bg);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      animation: fadeUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(18px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .icon-container {
+      font-size: 4rem;
+      margin-bottom: 1.5rem;
+      color: var(--danger);
+      display: inline-block;
+      animation: pulse 2s infinite ease-in-out;
+    }
+    
+    @keyframes pulse {
+      0% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.05); opacity: 0.8; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    h1 {
+      font-size: 1.8rem;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      margin-bottom: 0.75rem;
+    }
+    
+    p {
+      font-size: 1rem;
+      color: var(--muted);
+      margin-bottom: 2rem;
+      line-height: 1.6;
+    }
+
+    .info-box {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--glass-border);
+      border-radius: 8px;
+      padding: 1.25rem;
+      font-size: 0.95rem;
+      color: #e0e0e0;
+      margin-bottom: 2rem;
+    }
+
+    .info-box strong {
+      color: var(--text);
+    }
+
+    .btn {
+      display: inline-block;
+      padding: 0.85rem 2rem;
+      background: linear-gradient(135deg, var(--accent), #ff6b6b);
+      color: #fff;
+      text-decoration: none;
+      border: none;
+      border-radius: 10px;
+      font-size: 1.05rem;
+      font-weight: 700;
+      cursor: pointer;
+      letter-spacing: 0.02em;
+      transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s;
+    }
+    
+    .btn:hover { 
+      box-shadow: 0 8px 25px rgba(255, 140, 66, 0.5); 
+      transform: translateY(-2px);
+    }
+    .btn:active {
+      transform: translateY(0);
+    }
+  </style>
+</head>
+<body>
+
+<main class="card" role="main">
+  <div class="icon-container" aria-hidden="true">🔒</div>
+  <h1>Network Locked</h1>
+  <p>Access to the platform is restricted. You appear to be connected from an unauthorized network.</p>
+  
+  <div class="info-box">
+    Please ensure your device is connected to the <strong>venue Wi-Fi</strong> to continue.
+  </div>
+
+  <button onclick="window.location.reload()" class="btn">Try Again</button>
+</main>
+
+<script src="/static/js/math_bg.js"></script>
+</body>
+</html>
