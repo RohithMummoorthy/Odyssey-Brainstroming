@@ -30,3 +30,8 @@ Thumbs.db
 
 # Render / deployment
 *.log
+
+# Setup docs
+GOOGLE_SETUP.md
+DEPLOYMENT.md
+SUPABASE_SETUP.md
