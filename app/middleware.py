@@ -15,7 +15,7 @@ import logging
 import time
 from typing import Optional
 
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template
 
 from app.models.db import get_supabase
 
@@ -121,14 +121,6 @@ def init_middleware(app: Flask) -> None:
                 allowed_ip,
                 request.path,
             )
-            return (
-                jsonify(
-                    {
-                        "error":   "network_violation",
-                        "message": "Use venue Wi-Fi",
-                    }
-                ),
-                403,
-            )
+            return render_template("network_error.html"), 403
 
         return None   # IP matches — continue normally
