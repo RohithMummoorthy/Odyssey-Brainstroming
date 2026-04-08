@@ -26,7 +26,7 @@
 /* ── Reset ──────────────────────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-html { font-size: 16px; }
+html { font-size: 16px; overscroll-behavior: none; }
 
 body {
   background: transparent;
@@ -35,6 +35,8 @@ body {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  overscroll-behavior: none;
+  overflow-x: hidden;
 }
 
 /* ── Header bar ─────────────────────────────────────────────────────────── */

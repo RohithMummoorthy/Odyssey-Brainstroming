@@ -1,32 +1,242 @@
 [
-  {"question_text": "If 2x − 3 = 11, what is x?", "option_a": "5", "option_b": "6", "option_c": "7", "option_d": "8", "correct_answer": "C"},
-  {"question_text": "What is 20% of 350?", "option_a": "60", "option_b": "65", "option_c": "70", "option_d": "75", "correct_answer": "C"},
-  {"question_text": "What is 14²?", "option_a": "169", "option_b": "186", "option_c": "196", "option_d": "216", "correct_answer": "C"},
-  {"question_text": "Simplify: 12/16", "option_a": "1/2", "option_b": "2/3", "option_c": "3/4", "option_d": "4/5", "correct_answer": "C"},
-  {"question_text": "If a car travels 150 miles in 3 hours, what is its speed?", "option_a": "40 mph", "option_b": "45 mph", "option_c": "50 mph", "option_d": "55 mph", "correct_answer": "C"},
-  {"question_text": "What is √81?", "option_a": "7", "option_b": "8", "option_c": "9", "option_d": "10", "correct_answer": "C"},
-  {"question_text": "What is 40% of 80?", "option_a": "30", "option_b": "32", "option_c": "34", "option_d": "36", "correct_answer": "B"},
-  {"question_text": "If y - 5 = 12, what is y?", "option_a": "7", "option_b": "15", "option_c": "17", "option_d": "19", "correct_answer": "C"},
-  {"question_text": "What is the perimeter of an equilateral triangle with side 6?", "option_a": "12", "option_b": "15", "option_c": "18", "option_d": "24", "correct_answer": "C"},
-  {"question_text": "What is 3.5 + 4.2?", "option_a": "7.5", "option_b": "7.7", "option_c": "8.5", "option_d": "8.7", "correct_answer": "B"},
-  {"question_text": "What is 100 ÷ 4?", "option_a": "20", "option_b": "22", "option_c": "25", "option_d": "30", "correct_answer": "C"},
-  {"question_text": "What is 9 × 7?", "option_a": "54", "option_b": "56", "option_c": "63", "option_d": "72", "correct_answer": "C"},
-  {"question_text": "What is the next even number after 14?", "option_a": "15", "option_b": "16", "option_c": "18", "option_d": "20", "correct_answer": "B"},
-  {"question_text": "What is 1/2 + 1/4?", "option_a": "1/4", "option_b": "1/3", "option_c": "3/4", "option_d": "1", "correct_answer": "C"},
-  {"question_text": "What is 2³?", "option_a": "4", "option_b": "6", "option_c": "8", "option_d": "16", "correct_answer": "C"},
-  {"question_text": "If x + 4 = 10, what is x²?", "option_a": "16", "option_b": "25", "option_c": "36", "option_d": "49", "correct_answer": "C"},
-  {"question_text": "What is 50% of 500?", "option_a": "200", "option_b": "225", "option_c": "250", "option_d": "300", "correct_answer": "C"},
-  {"question_text": "What is 8 - 3.5?", "option_a": "4.5", "option_b": "5.5", "option_c": "6.5", "option_d": "7.5", "correct_answer": "A"},
-  {"question_text": "If the radius of a circle is 5, what is its diameter?", "option_a": "5", "option_b": "10", "option_c": "15", "option_d": "20", "correct_answer": "B"},
-  {"question_text": "What is 15 × 3?", "option_a": "35", "option_b": "40", "option_c": "45", "option_d": "50", "correct_answer": "C"},
-  {"question_text": "What is the LCM of 3 and 5?", "option_a": "8", "option_b": "10", "option_c": "15", "option_d": "30", "correct_answer": "C"},
-  {"question_text": "What is |-7|?", "option_a": "-7", "option_b": "0", "option_c": "7", "option_d": "14", "correct_answer": "C"},
-  {"question_text": "What is 1000 - 450?", "option_a": "450", "option_b": "500", "option_c": "550", "option_d": "650", "correct_answer": "C"},
-  {"question_text": "Complete the sequence: 5, 10, 15, __", "option_a": "20", "option_b": "25", "option_c": "30", "option_d": "35", "correct_answer": "A"},
-  {"question_text": "What is 2/5 of 100?", "option_a": "20", "option_b": "30", "option_c": "40", "option_d": "50", "correct_answer": "C"},
-  {"question_text": "If x = 3, what is 2x³?", "option_a": "18", "option_b": "24", "option_c": "36", "option_d": "54", "correct_answer": "D"},
-  {"question_text": "What is 12 × 12?", "option_a": "124", "option_b": "134", "option_c": "144", "option_d": "154", "correct_answer": "C"},
-  {"question_text": "What is 9% as a decimal?", "option_a": "0.009", "option_b": "0.09", "option_c": "0.9", "option_d": "9.0", "correct_answer": "B"},
-  {"question_text": "What is 30 ÷ 5?", "option_a": "4", "option_b": "5", "option_c": "6", "option_d": "7", "correct_answer": "C"},
-  {"question_text": "Solve: 2(x + 1) = 14", "option_a": "5", "option_b": "6", "option_c": "7", "option_d": "8", "correct_answer": "B"}
+  {
+    "question_text": "Identify the next term in the alternating sequence: 7, 10, 8, 11, 9, 12, ...",
+    "option_a": "11",
+    "option_b": "7",
+    "option_c": "10",
+    "option_d": "18",
+    "correct_answer": "C"
+  },
+  {
+    "question_text": "If 'COMPUTER' is encoded as 'RFUVQNPC', how is 'MEDICINE' coded?",
+    "option_a": "EOJDEJFM",
+    "option_b": "EOJDJEFM",
+    "option_c": "MFEJDJOE",
+    "option_d": "EOJDJFME",
+    "correct_answer": "B"
+  },
+  {
+    "question_text": "A man says: 'That man's father is my father's son.' Who is in the photo?",
+    "option_a": "Himself",
+    "option_b": "His father",
+    "option_c": "His nephew",
+    "option_d": "His son",
+    "correct_answer": "D"
+  },
+  {
+    "question_text": "If the day before yesterday was Thursday, what day is four days after tomorrow?",
+    "option_a": "Friday",
+    "option_b": "Thursday",
+    "option_c": "Wednesday",
+    "option_d": "Tuesday",
+    "correct_answer": "B"
+  },
+  {
+    "question_text": "Identify the odd one out.",
+    "option_a": "Tyre",
+    "option_b": "Engine",
+    "option_c": "Car",
+    "option_d": "Steering Wheel",
+    "correct_answer": "C"
+  },
+  {
+    "question_text": "Coding: Light→Morning, Morning→Dark, Dark→Night, Night→Sunshine. What represents sleep?",
+    "option_a": "Dark",
+    "option_b": "Night",
+    "option_c": "Sunshine",
+    "option_d": "Morning",
+    "correct_answer": "C"
+  },
+  {
+    "question_text": "Some kings are queens. All queens are beautiful. What follows?",
+    "option_a": "Both follow",
+    "option_b": "Neither follows",
+    "option_c": "Some kings are beautiful",
+    "option_d": "All kings are beautiful",
+    "correct_answer": "C"
+  },
+  {
+    "question_text": "Rotation of hour hand from 12:00 to 05:10?",
+    "option_a": "150°",
+    "option_b": "155°",
+    "option_c": "160°",
+    "option_d": "145°",
+    "correct_answer": "B"
+  },
+  {
+    "question_text": "Walk 2 miles North, right turn, 2 miles, right turn. Direction now?",
+    "option_a": "South",
+    "option_b": "East",
+    "option_c": "West",
+    "option_d": "North",
+    "correct_answer": "A"
+  },
+  {
+    "question_text": "Find next number: 4, 9, 20, 43, 90, ...",
+    "option_a": "180",
+    "option_b": "190",
+    "option_c": "184",
+    "option_d": "185",
+    "correct_answer": "D"
+  },
+  {
+    "question_text": "3 pills at 30-min intervals. Total time?",
+    "option_a": "90 minutes",
+    "option_b": "60 minutes",
+    "option_c": "30 minutes",
+    "option_d": "120 minutes",
+    "correct_answer": "B"
+  },
+  {
+    "question_text": "A finished before B but after C. D before E but after B. Who is first?",
+    "option_a": "A",
+    "option_b": "B",
+    "option_c": "C",
+    "option_d": "D",
+    "correct_answer": "C"
+  },
+  {
+    "question_text": "10m rope cut 1m daily. Final cut day?",
+    "option_a": "10 days",
+    "option_b": "8 days",
+    "option_c": "11 days",
+    "option_d": "9 days",
+    "correct_answer": "D"
+  },
+  {
+    "question_text": "Find 6th term: 1, 11, 21, 1211, 111221, ...",
+    "option_a": "312211",
+    "option_b": "122111",
+    "option_c": "211221",
+    "option_d": "111222",
+    "correct_answer": "A"
+  },
+  {
+    "question_text": "3 cats kill 3 rats in 3 min. Cats for 100 rats in 100 min?",
+    "option_a": "100",
+    "option_b": "33",
+    "option_c": "1",
+    "option_d": "3",
+    "correct_answer": "D"
+  },
+  {
+    "question_text": "Milk-water ratio 7:5 becomes 7:9 after replacing 9L. Initial milk?",
+    "option_a": "15 liters",
+    "option_b": "21 liters",
+    "option_c": "24 liters",
+    "option_d": "27 liters",
+    "correct_answer": "B"
+  },
+  {
+    "question_text": "Solve: sum of logₓ(2ⁿ) for n=1 to 3 = 6",
+    "option_a": "2",
+    "option_b": "4",
+    "option_c": "8",
+    "option_d": "10",
+    "correct_answer": "A"
+  },
+  {
+    "question_text": "Arrange 'LEADER' with vowels as one block. Ways?",
+    "option_a": "144",
+    "option_b": "72",
+    "option_c": "120",
+    "option_d": "360",
+    "correct_answer": "B"
+  },
+  {
+    "question_text": "Amount grows 672 → 714 in 1 year. Interest rate?",
+    "option_a": "5%",
+    "option_b": "7.5%",
+    "option_c": "6.25%",
+    "option_d": "10%",
+    "correct_answer": "C"
+  },
+  {
+    "question_text": "Probability of sum 9 when rolling 2 dice?",
+    "option_a": "1/6",
+    "option_b": "1/9",
+    "option_c": "1/12",
+    "option_d": "1/4",
+    "correct_answer": "B"
+  },
+  {
+    "question_text": "Solve: 3^(x-y)=3^3 and 3^(x+y)=3^5",
+    "option_a": "4",
+    "option_b": "2",
+    "option_c": "5",
+    "option_d": "3",
+    "correct_answer": "A"
+  },
+  {
+    "question_text": "Rectangle: diagonal √41, area 20. Perimeter?",
+    "option_a": "20 cm",
+    "option_b": "14 cm",
+    "option_c": "18 cm",
+    "option_d": "25 cm",
+    "correct_answer": "C"
+  },
+  {
+    "question_text": "If x = (√3 + √2)/(√3 - √2), find x + 1/x",
+    "option_a": "5",
+    "option_b": "10",
+    "option_c": "12",
+    "option_d": "2√6",
+    "correct_answer": "B"
+  },
+  {
+    "question_text": "Pipes A+B fill 1/3 tank in 2h. A alone finishes in 7h. B rate?",
+    "option_a": "10 hours",
+    "option_b": "12 hours",
+    "option_c": "16 hours",
+    "option_d": "14 hours",
+    "correct_answer": "D"
+  },
+  {
+    "question_text": "7 consecutive numbers mean = 20. Find n+3.",
+    "option_a": "20",
+    "option_b": "23",
+    "option_c": "24",
+    "option_d": "27",
+    "correct_answer": "B"
+  },
+  {
+    "question_text": "Truth-liar puzzle: who is truthful?",
+    "option_a": "B",
+    "option_b": "A",
+    "option_c": "C",
+    "option_d": "None",
+    "correct_answer": "A"
+  },
+  {
+    "question_text": "Next letter: M, T, W, T, F, S, ...",
+    "option_a": "M",
+    "option_b": "T",
+    "option_c": "S",
+    "option_d": "W",
+    "correct_answer": "C"
+  },
+  {
+    "question_text": "Monty Hall: switch doors?",
+    "option_a": "Yes, odds double to 2/3",
+    "option_b": "No, 50/50",
+    "option_c": "No, 1/3",
+    "option_d": "Yes, 100%",
+    "correct_answer": "A"
+  },
+  {
+    "question_text": "Mirror shows 18:01. Actual time?",
+    "option_a": "10:81",
+    "option_b": "10:51",
+    "option_c": "10:01",
+    "option_d": "10:21",
+    "correct_answer": "C"
+  },
+  {
+    "question_text": "How many months have 28 days?",
+    "option_a": "1",
+    "option_b": "0",
+    "option_c": "6",
+    "option_d": "12",
+    "correct_answer": "D"
+  }
 ]

@@ -26,6 +26,8 @@ function _authHeaders() {
 let _getQuizState = null;   // injected by init()
 let _isLocked     = false;
 let _switchCount  = 0;
+let _isResetting  = false;
+let _lastBlurTime = 0;
 let _lockPollId   = null;
 let _snapshotId   = null;
 
@@ -108,6 +110,18 @@ function _requestFullscreen() {
   }
 }
 
+async function _forceResetAndLogout() {
+  if (_isResetting) return;
+  _isResetting = true;
+  _lockScreen('Resetting session due to security violation...');
+  try {
+    await fetch('/api/reset-progress', { method: 'POST', headers: _authHeaders() });
+  } catch (e) {}
+  localStorage.removeItem('mq_token');
+  localStorage.removeItem('mq_team_id');
+  window.location.href = '/login';
+}
+
 function _onFullscreenChange() {
   const isFullscreen = !!(
     document.fullscreenElement        ||
@@ -115,12 +129,12 @@ function _onFullscreenChange() {
     document.mozFullScreenElement
   );
 
-  if (!isFullscreen && !_isLocked) {
+  if (!isFullscreen && !_isLocked && !_isResetting) {
     const state   = _getQuizState ? _getQuizState() : {};
     const qNum    = state.currentIndex != null ? state.currentIndex + 1 : 0;
 
     _logAudit('fullscreen_exit', { question_number: qNum });
-    _lockScreen('You exited fullscreen.\nContact the admin to continue.');
+    _forceResetAndLogout();
   }
 }
 
@@ -152,15 +166,26 @@ function _stopLockPoll() {
 // 5. TAB / VISIBILITY DETECTION
 // ─────────────────────────────────────────────────────────────────────────────
 
-function _onVisibilityChange() {
-  if (!document.hidden) return;  // only care about going away
+function _onVisibilityChange(e) {
+  if (_isResetting || _isLocked) return;
+  
+  if (e && e.type === 'visibilitychange' && !document.hidden) return;
+  
+  const now = Date.now();
+  if (now - _lastBlurTime < 1000) return;
+  _lastBlurTime = now;
 
   _switchCount++;
   const state = _getQuizState ? _getQuizState() : {};
   const qNum  = state.currentIndex != null ? state.currentIndex + 1 : 0;
 
-  _logAudit('tab_switch', { question_number: qNum, count: _switchCount });
-  _showToast(`Tab switch detected. Admin notified. (Count: ${_switchCount})`);
+  _logAudit('tab_switch', { question_number: qNum, count: _switchCount, event_type: e ? e.type : 'unknown' });
+
+  if (_switchCount >= 3) {
+    _lockScreen('You have been blocked for leaving the quiz interface multiple times (3). Contact Admin.');
+  } else {
+    _showToast(`Focus lost / Tab switch detected. Admin notified. (Count: ${_switchCount})`);
+  }
 }
 
 function _showToast(message) {
@@ -268,6 +293,7 @@ function init(getStateFn) {
 
   // Tab / visibility switch
   document.addEventListener('visibilitychange', _onVisibilityChange);
+  window.addEventListener('blur', _onVisibilityChange);
 
   // DOM snapshot every 90 seconds
   _snapshotId = setInterval(_captureSnapshot, 90_000);
@@ -284,6 +310,7 @@ function destroy() {
   document.removeEventListener('webkitfullscreenchange', _onFullscreenChange);
   document.removeEventListener('mozfullscreenchange',    _onFullscreenChange);
   document.removeEventListener('visibilitychange',       _onVisibilityChange);
+  window.removeEventListener('blur', _onVisibilityChange);
   _stopLockPoll();
   if (_snapshotId) { clearInterval(_snapshotId); _snapshotId = null; }
 }

@@ -175,6 +175,44 @@ def save_progress():
 
 
 # ---------------------------------------------------------------------------
+# POST /api/reset-progress (Anti-cheat triggered)
+# ---------------------------------------------------------------------------
+
+@quiz_bp.route("/api/reset-progress", methods=["POST"])
+@require_auth
+def reset_progress():
+    team_id = g.team_id
+    sb = get_supabase()
+
+    try:
+        # 1. Reset team state
+        sb.table("teams").update(
+            {
+                "status": "in_progress",
+                "score": None,
+                "finish_time": None
+            }
+        ).eq("team_id", team_id).execute()
+
+        # 2. Reset session answers & restart clock
+        now_utc = datetime.now(timezone.utc).isoformat()
+        sb.table("sessions").update(
+            {
+                "answers_json": {},
+                "server_start_time": now_utc,
+                "last_saved_at": now_utc
+            }
+        ).eq("team_id", team_id).execute()
+
+    except Exception as exc:
+        log.error("reset_progress: failed for %s: %s", team_id, exc)
+        return jsonify({"error": "server_error", "message": "Could not reset progress."}), 500
+
+    _log_audit(team_id, "forced_reset", {"reason": "fullscreen_exit", "action": "Progress completely reset due to anti-cheat violation"})
+
+    return jsonify({"reset": True}), 200
+
+# ---------------------------------------------------------------------------
 # POST /submit
 # ---------------------------------------------------------------------------
 
