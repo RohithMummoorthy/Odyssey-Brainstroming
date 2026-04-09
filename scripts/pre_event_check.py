@@ -63,7 +63,12 @@ def _http(method: str, url: str, body: dict | None = None,
     req     = urllib.request.Request(url, data=data, headers=headers, method=method.upper())
     try:
         with urllib.request.urlopen(req, timeout=timeout) as resp:
-            return resp.status, json.loads(resp.read().decode("utf-8", errors="replace"))
+            body_text = resp.read().decode("utf-8", errors="replace")
+            try:
+                return resp.status, json.loads(body_text)
+            except Exception:
+                # Some valid endpoints (e.g. /leaderboard) return HTML, not JSON.
+                return resp.status, {"_raw": body_text}
     except urllib.error.HTTPError as exc:
         body_text = exc.read().decode("utf-8", errors="replace")
         try:

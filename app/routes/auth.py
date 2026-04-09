@@ -60,11 +60,10 @@ def _log_audit(team_id: str, event_type: str, metadata: dict | None = None) -> N
 
 
 def _auto_submit(team_id: str) -> None:
-    """Mark a team as submitted when their time runs out (best-effort)."""
+    """Submit a team when their time runs out (best-effort, with scoring)."""
     try:
-        sb = get_supabase()
-        sb.table("teams").update({"status": "submitted"}).eq("team_id", team_id).execute()
-        _log_audit(team_id, "auto_submitted")
+        from app.services.timer_service import auto_submit as timed_auto_submit
+        timed_auto_submit(team_id)
     except Exception as exc:
         log.warning("auto_submit failed for %s: %s", team_id, exc)
 
@@ -107,13 +106,19 @@ def login():
         _log_audit(team_id, "login_failed_wrong_pin")
         return jsonify({"error": "invalid_credentials", "message": "Team ID or PIN is incorrect."}), 401
 
-    # ── Already submitted ───────────────────────────────────────────────
-    if team["status"] == "submitted":
+    team_status = team.get("status") or "waiting"
+
+    # ── Team state checks ────────────────────────────────────────────────
+    if team_status == "submitted":
         return jsonify({"error": "already_submitted", "message": "Your team has already submitted."}), 403
+    if team_status == "waiting":
+        return jsonify({"error": "event_not_started", "message": "Quiz has not started yet."}), 403
+    if team_status != "active":
+        return jsonify({"error": "event_unavailable", "message": "Quiz is not available right now."}), 403
 
     # ── Re-login check ──────────────────────────────────────────────────
     login_count: int = team.get("login_count") or 0
-    if login_count > 0 and team["status"] == "active":
+    if login_count > 0 and team_status == "active":
         # Phase 5 will add explicit admin approval gate.
         # For now: allow but log.
         log.info("Re-login: %s (relogin_requested=%s)", team_id, team.get("relogin_requested"))
@@ -121,9 +126,7 @@ def login():
 
     # ── Increment login_count ───────────────────────────────────────────
     try:
-        sb.table("teams").update(
-            {"login_count": login_count + 1, "status": "active"}
-        ).eq("team_id", team_id).execute()
+        sb.table("teams").update({"login_count": login_count + 1}).eq("team_id", team_id).execute()
     except Exception as exc:
         log.error("Failed to update login_count for %s: %s", team_id, exc)
         return jsonify({"error": "server_error", "message": "Please try again."}), 500

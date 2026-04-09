@@ -86,6 +86,16 @@ let _lockedIp       = '';
 let _statusInterval = null;
 let _lbInterval     = null;
 
+function inferEventStatusFromTeams(rows) {
+  const submitted = rows.filter(t => t.status === 'submitted').length;
+  const active    = rows.filter(t => t.status === 'active').length;
+  const waiting   = rows.filter(t => t.status === 'waiting').length;
+  if (active > 0 || (submitted > 0 && waiting === 0 && active === 0)) {
+    return active > 0 ? 'running' : 'ended';
+  }
+  return 'waiting';
+}
+
 // ── Login ─────────────────────────────────────────────────────────────────
 
 function showLogin() {
@@ -130,7 +140,16 @@ async function refreshStatus() {
   const r = await api('GET', '/admin/status');
   if (!r || !r.ok) return;
 
-  _allTeams = r.data || [];
+  const payload = r.data;
+  if (Array.isArray(payload)) {
+    // Backward-compatibility for older backend response shape.
+    _allTeams = payload;
+    _eventStatus = inferEventStatusFromTeams(_allTeams);
+  } else {
+    _allTeams = payload?.teams || [];
+    _eventStatus = payload?.event_status || inferEventStatusFromTeams(_allTeams);
+  }
+
   renderTeams();
   renderRelogin();
   updateEventStatusUI();
@@ -163,15 +182,7 @@ function startPolling() {
 // ── Event status UI ───────────────────────────────────────────────────────
 
 function updateEventStatusUI() {
-  // Derive event status from team states
-  const submitted = _allTeams.filter(t => t.status === 'submitted').length;
-  const active    = _allTeams.filter(t => t.status === 'active').length;
-  const waiting   = _allTeams.filter(t => t.status === 'waiting').length;
-
-  // Infer event phase
-  if (active > 0 || (submitted > 0 && waiting === 0 && active === 0)) {
-    _eventStatus = active > 0 ? 'running' : 'ended';
-  } else {
+  if (!['waiting', 'running', 'ended'].includes(_eventStatus)) {
     _eventStatus = 'waiting';
   }
 
@@ -214,6 +225,37 @@ function fmtTime(iso) {
   return `${d.toLocaleTimeString()}`;
 }
 
+function fmtDuration(seconds) {
+  if (seconds === null || seconds === undefined) return '—';
+  const total = Math.max(0, Number(seconds) || 0);
+  const mins = Math.floor(total / 60);
+  const secs = total % 60;
+  return `${mins}:${String(secs).padStart(2, '0')}`;
+}
+
+function timerLabel(t) {
+  if (!t.timer_started) {
+    return '<span class="badge badge-muted">Not started</span>';
+  }
+  if (t.status === 'submitted') {
+    return '<span class="badge badge-success">Completed</span>';
+  }
+  if (typeof t.remaining_seconds === 'number') {
+    return `<span class="badge badge-warn">${fmtDuration(t.remaining_seconds)} left</span>`;
+  }
+  return '<span class="badge badge-muted">Started</span>';
+}
+
+function timeTakenLabel(t) {
+  if (t.time_taken_minutes === null || t.time_taken_minutes === undefined) return '—';
+  return `${t.time_taken_minutes} min`;
+}
+
+function startedAtLabel(t) {
+  if (!t.server_start_time) return '—';
+  return fmtTime(t.server_start_time);
+}
+
 function renderTeams() {
   const filter = _filterText.toLowerCase();
   const rows   = _allTeams.filter(t =>
@@ -225,7 +267,7 @@ function renderTeams() {
   Dom.teamCount.textContent = `(${rows.length}/${_allTeams.length})`;
 
   if (!rows.length) {
-    Dom.teamsBody.innerHTML = `<tr><td colspan="10" class="empty">No teams match filter.</td></tr>`;
+    Dom.teamsBody.innerHTML = `<tr><td colspan="13" class="empty">No teams match filter.</td></tr>`;
     return;
   }
 
@@ -245,6 +287,9 @@ function renderTeams() {
       <td style="color:${t.tab_switch_count > 3 ? 'var(--warn)' : 'inherit'}">${t.tab_switch_count ?? 0}</td>
       <td>${t.screen_locked   ? '<span class="badge badge-danger">Yes</span>'  : '<span class="badge badge-muted">No</span>'}</td>
       <td>${t.relogin_requested ? '<span class="badge badge-warn">Req</span>' : '—'}</td>
+      <td>${timerLabel(t)}</td>
+      <td class="ts">${startedAtLabel(t)}</td>
+      <td class="ts">${timeTakenLabel(t)}</td>
       <td class="ts">${fmtTime(t.finish_time)}</td>
       <td>
         <div style="display:flex;gap:.3rem;flex-wrap:nowrap">

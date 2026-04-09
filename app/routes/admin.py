@@ -142,7 +142,17 @@ def admin_login():
 @admin_bp.route("/admin/status")
 @require_admin
 def admin_status():
-    """Return all teams with session metadata, sorted by completion status."""
+    """Return admin dashboard status payload.
+
+    Default response shape:
+        {
+            "event_status": "waiting"|"running"|"ended",
+            "teams": [...]
+        }
+
+    Compatibility mode:
+        /admin/status?legacy=1 returns only the teams list.
+    """
     sb = _sb()
 
     # Fetch teams
@@ -152,28 +162,56 @@ def admin_status():
     ).execute()
     teams = {t["team_id"]: t for t in (teams_r.data or [])}
 
-    # Fetch sessions for last_saved_at + answers_json
+    # Fetch sessions for last_saved_at + answers_json + timer start
     sess_r = sb.table("sessions").select(
-        "team_id,answers_json,last_saved_at"
+        "team_id,answers_json,last_saved_at,server_start_time"
     ).execute()
     sessions = {s["team_id"]: s for s in (sess_r.data or [])}
+
+    event_duration = int(_get_app_config("event_duration_seconds", "1800"))
+    now_utc = datetime.now(timezone.utc)
 
     rows = []
     for tid, team in teams.items():
         sess  = sessions.get(tid, {})
         answers_json = sess.get("answers_json") or {}
         questions_answered = sum(1 for v in answers_json.values() if v)
+        team_status = team.get("status") or "waiting"
+
+        start_str = sess.get("server_start_time")
+        timer_started = bool(start_str)
+        remaining_seconds = None
+        time_taken_minutes = None
+
+        if start_str:
+            try:
+                server_start = datetime.fromisoformat(start_str.replace("Z", "+00:00"))
+                elapsed = max(0, int((now_utc - server_start).total_seconds()))
+                if team_status == "active":
+                    remaining_seconds = max(0, event_duration - elapsed)
+
+                finish_str = team.get("finish_time")
+                if finish_str:
+                    finish_time = datetime.fromisoformat(finish_str.replace("Z", "+00:00"))
+                    time_taken_minutes = round(max(0.0, (finish_time - server_start).total_seconds() / 60), 1)
+            except Exception:
+                remaining_seconds = None
+                time_taken_minutes = None
 
         rows.append({
             "team_id":           tid,
             "team_name":         team.get("team_name") or "",
-            "status":            team.get("status") or "waiting",
+            "status":            team_status,
             "score":             team.get("score") or 0,
             "questions_answered": questions_answered,
             "tab_switch_count":  team.get("tab_switch_count") or 0,
             "screen_locked":     bool(team.get("screen_locked")),
             "relogin_requested": bool(team.get("relogin_requested")),
             "finish_time":       team.get("finish_time"),
+            "server_start_time": start_str,
+            "timer_started":     timer_started,
+            "remaining_seconds": remaining_seconds,
+            "time_taken_minutes": time_taken_minutes,
             "set_assigned":      team.get("set_assigned") or "",
             "last_saved_at":     sess.get("last_saved_at"),
         })
@@ -187,7 +225,13 @@ def admin_status():
         return (s, score, ft)
 
     rows.sort(key=_sort_key)
-    return jsonify(rows), 200
+
+    event_status = _get_app_config("event_status", "waiting")
+
+    if request.args.get("legacy") == "1":
+        return jsonify(rows), 200
+
+    return jsonify({"event_status": event_status, "teams": rows}), 200
 
 
 # ---------------------------------------------------------------------------
@@ -230,29 +274,22 @@ def unlock_network():
 @admin_bp.route("/admin/start-event", methods=["POST"])
 @require_admin
 def start_event():
-    """Set event_status=running and activate all waiting teams."""
+    """Set event_status=running and activate all waiting teams.
+
+    Timer starts per-team on first successful login (session creation), not
+    when the admin clicks Start Event.
+    """
     sb = _sb()
     _set_app_config("event_status", "running")
 
     # Find waiting teams
     teams_r = sb.table("teams").select("team_id").eq("status", "waiting").execute()
     waiting_teams = [t["team_id"] for t in (teams_r.data or [])]
-    now_utc = datetime.now(timezone.utc).isoformat()
 
     updated = 0
     for tid in waiting_teams:
         try:
             sb.table("teams").update({"status": "active"}).eq("team_id", tid).execute()
-            # Upsert session with server_start_time
-            sb.table("sessions").upsert(
-                {
-                    "team_id":           tid,
-                    "server_start_time": now_utc,
-                    "answers_json":      {},
-                    "remaining_seconds": int(_get_app_config("event_duration_seconds", "1800")),
-                },
-                on_conflict="team_id",
-            ).execute()
             updated = updated + 1
         except Exception as exc:
             log.error("start_event: failed for %s: %s", tid, exc)
@@ -528,7 +565,7 @@ def export_sheets():
             "https://www.googleapis.com/auth/drive",
         ]
         creds  = Credentials.from_service_account_info(creds_dict, scopes=scopes)
-        client = gspread.authorize(creds)
+        client = gspread.authorize(creds)  # type: ignore[attr-defined]
         sheet  = client.open_by_key(sheet_id).sheet1
     except Exception as exc:
         log.error("export_sheets: gspread auth failed: %s", exc)
