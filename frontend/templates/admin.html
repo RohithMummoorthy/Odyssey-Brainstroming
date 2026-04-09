@@ -27,7 +27,10 @@
     <span class="topbar-brand">∑ MathQuiz Admin</span>
     <div class="topbar-controls">
       <span id="eventStatusBadge" class="badge badge-muted">waiting</span>
+      <input id="startCountInput" class="topbar-input" type="number" min="1" placeholder="Teams to activate" title="Optional: activate only first N waiting teams"/>
       <button class="btn btn-success" id="startEventBtn">▶ Start Event</button>
+      <input id="activateTeamInput" class="topbar-input" type="text" placeholder="Late Team ID" title="Activate one team manually (e.g. TEAM077)"/>
+      <button class="btn btn-success" id="activateTeamBtn">+ Activate Team</button>
       <button class="btn btn-danger"  id="endEventBtn" disabled>■ End Event</button>
       <button class="btn btn-danger"  id="resetEventBtn" style="margin-left:8px;" title="Reset all scores and start over">↺ Reset Event</button>
       <button class="btn btn-warn"    id="lockNetBtn">🔒 Lock Network</button>

@@ -31,7 +31,10 @@ const Dom = {
   loginBtn:         $('loginBtn'),
   loginError:       $('loginError'),
   eventStatusBadge: $('eventStatusBadge'),
+  startCountInput:  $('startCountInput'),
   startEventBtn:    $('startEventBtn'),
+  activateTeamInput:$('activateTeamInput'),
+  activateTeamBtn:  $('activateTeamBtn'),
   endEventBtn:      $('endEventBtn'),
   resetEventBtn:    $('resetEventBtn'),
   lockNetBtn:       $('lockNetBtn'),
@@ -413,8 +416,20 @@ window.doForceSubmit   = doForceSubmit;
 // ── Top-bar buttons ────────────────────────────────────────────────────────
 
 Dom.startEventBtn.addEventListener('click', async () => {
-  if (!confirm('Start the event? All waiting teams will be activated.')) return;
-  const r = await api('POST', '/admin/start-event');
+  const raw = (Dom.startCountInput?.value || '').trim();
+  const teamCount = raw ? Number(raw) : null;
+  if (raw && (!Number.isInteger(teamCount) || teamCount <= 0)) {
+    toast('Enter a valid positive team count', 'err');
+    return;
+  }
+
+  const msg = teamCount
+    ? `Start the event for first ${teamCount} waiting teams?`
+    : 'Start the event? All waiting teams will be activated.';
+  if (!confirm(msg)) return;
+
+  const body = teamCount ? { team_count: teamCount } : {};
+  const r = await api('POST', '/admin/start-event', body);
   if (r?.ok) {
     toast(`Event started — ${r.data.team_count} teams active`, 'ok');
     refreshStatus();
@@ -423,11 +438,32 @@ Dom.startEventBtn.addEventListener('click', async () => {
   }
 });
 
+Dom.activateTeamBtn.addEventListener('click', async () => {
+  const teamId = (Dom.activateTeamInput?.value || '').trim().toUpperCase();
+  if (!teamId) {
+    toast('Enter Team ID to activate', 'err');
+    return;
+  }
+  const r = await api('POST', '/admin/activate-team', { team_id: teamId });
+  if (r?.ok) {
+    toast(`Team activated: ${teamId}`, 'ok');
+    Dom.activateTeamInput.value = '';
+    refreshStatus();
+  } else {
+    toast(r?.data?.message || 'Failed to activate team', 'err');
+  }
+});
+
+Dom.activateTeamInput?.addEventListener('keydown', e => {
+  if (e.key === 'Enter') Dom.activateTeamBtn.click();
+});
+
 Dom.endEventBtn.addEventListener('click', async () => {
   if (!confirm('End the event? All active teams will be auto-submitted.')) return;
   const r = await api('POST', '/admin/end-event');
   if (r?.ok) {
-    toast(`Event ended — ${r.data.auto_submitted} auto-submitted`, 'ok');
+    const queued = r.data.queued_submissions ?? r.data.auto_submitted ?? 0;
+    toast(`Event ended — ${queued} submissions queued`, 'ok');
     refreshStatus();
   } else {
     toast('Failed to end event', 'err');

@@ -67,7 +67,9 @@ def auto_submit(team_id: str, answers_json: dict | None = None) -> None:
             )
             answers_json = result.data.get("answers_json") or {} if result.data else {}
         except Exception as exc:
-            log.error("auto_submit: failed to fetch session for %s: %s", team_id, exc)
+            # Teams can be active but never logged in yet, so no session row exists.
+            if "PGRST116" not in str(exc):
+                log.error("auto_submit: failed to fetch session for %s: %s", team_id, exc)
             answers_json = {}
 
     # ── Fetch team's set_assigned ─────────────────────────────────────

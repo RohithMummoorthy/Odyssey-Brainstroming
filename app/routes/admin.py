@@ -22,6 +22,7 @@ import functools
 import json
 import logging
 import os
+import threading
 from datetime import datetime, timezone, timedelta
 from typing import Any
 
@@ -280,22 +281,100 @@ def start_event():
     when the admin clicks Start Event.
     """
     sb = _sb()
+    body = request.get_json(silent=True) or {}
+    team_count_raw = body.get("team_count")
+
+    team_count = None
+    if team_count_raw not in (None, ""):
+        try:
+            team_count = int(team_count_raw)
+            if team_count <= 0:
+                return jsonify({"error": "bad_request", "message": "team_count must be a positive integer."}), 400
+        except Exception:
+            return jsonify({"error": "bad_request", "message": "team_count must be a positive integer."}), 400
+
     _set_app_config("event_status", "running")
 
     # Find waiting teams
-    teams_r = sb.table("teams").select("team_id").eq("status", "waiting").execute()
+    teams_r = (
+        sb.table("teams")
+        .select("team_id")
+        .eq("status", "waiting")
+        .order("team_id", desc=False)
+        .execute()
+    )
     waiting_teams = [t["team_id"] for t in (teams_r.data or [])]
+    selected_teams = waiting_teams[:team_count] if team_count else waiting_teams
 
     updated = 0
-    for tid in waiting_teams:
+    for tid in selected_teams:
         try:
             sb.table("teams").update({"status": "active"}).eq("team_id", tid).execute()
             updated = updated + 1
         except Exception as exc:
             log.error("start_event: failed for %s: %s", tid, exc)
 
-    _audit(None, "event_started", {"teams_activated": updated})
-    return jsonify({"started": True, "team_count": updated}), 200
+    _audit(None, "event_started", {"teams_activated": updated, "requested_team_count": team_count})
+    return jsonify({
+        "started": True,
+        "team_count": updated,
+        "requested_team_count": team_count,
+        "waiting_total": len(waiting_teams),
+    }), 200
+
+
+# ---------------------------------------------------------------------------
+# POST /admin/activate-team
+# ---------------------------------------------------------------------------
+
+@admin_bp.route("/admin/activate-team", methods=["POST"])
+@require_admin
+def activate_team():
+    """Activate a single team manually (for late arrivals)."""
+    body = request.get_json(silent=True) or {}
+    team_id = (body.get("team_id") or "").strip().upper()
+    if not team_id:
+        return jsonify({"error": "bad_request", "message": "team_id required."}), 400
+
+    try:
+        team_r = _sb().table("teams").select("team_id,status").eq("team_id", team_id).single().execute()
+        team = team_r.data or {}
+    except Exception:
+        return jsonify({"error": "not_found", "message": "Team not found."}), 404
+
+    status = team.get("status") or "waiting"
+    if status == "submitted":
+        return jsonify({"error": "invalid_state", "message": "Team is already submitted."}), 400
+    if status == "active":
+        return jsonify({"activated": False, "team_id": team_id, "message": "Team already active."}), 200
+
+    try:
+        _sb().table("teams").update({"status": "active"}).eq("team_id", team_id).execute()
+    except Exception as exc:
+        log.error("activate_team: %s %s", team_id, exc)
+        return jsonify({"error": "server_error", "message": "Could not activate team."}), 500
+
+    _set_app_config("event_status", "running")
+    _audit(team_id, "admin_team_activated", {"previous_status": status})
+    return jsonify({"activated": True, "team_id": team_id}), 200
+
+
+def _end_event_background_submit(team_ids: list[str]) -> None:
+    """Auto-submit teams in background so /admin/end-event returns fast."""
+    from app.services.timer_service import auto_submit
+
+    submitted = 0
+    for tid in team_ids:
+        try:
+            auto_submit(tid)
+            submitted += 1
+        except Exception as exc:
+            log.error("end_event background auto_submit failed for %s: %s", tid, exc)
+
+    _audit(None, "event_end_background_complete", {
+        "queued_submissions": len(team_ids),
+        "auto_submitted": submitted,
+    })
 
 
 # ---------------------------------------------------------------------------
@@ -305,7 +384,7 @@ def start_event():
 @admin_bp.route("/admin/end-event", methods=["POST"])
 @require_admin
 def end_event():
-    """Set event_status=ended and auto-submit all active teams."""
+    """Set event_status=ended and queue active teams for background submit."""
     sb = _sb()
     _set_app_config("event_status", "ended")
 
@@ -313,18 +392,12 @@ def end_event():
     teams_r = sb.table("teams").select("team_id").eq("status", "active").execute()
     active_teams = [t["team_id"] for t in (teams_r.data or [])]
 
-    from app.services.timer_service import auto_submit
+    if active_teams:
+        t = threading.Thread(target=_end_event_background_submit, args=(active_teams,), daemon=True)
+        t.start()
 
-    submitted = 0
-    for tid in active_teams:
-        try:
-            auto_submit(tid)
-            submitted = submitted + 1
-        except Exception as exc:
-            log.error("end_event: auto_submit failed for %s: %s", tid, exc)
-
-    _audit(None, "event_ended", {"auto_submitted": submitted})
-    return jsonify({"ended": True, "auto_submitted": submitted}), 200
+    _audit(None, "event_ended", {"queued_submissions": len(active_teams)})
+    return jsonify({"ended": True, "queued_submissions": len(active_teams)}), 200
 
 
 # ---------------------------------------------------------------------------
