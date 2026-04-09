@@ -259,13 +259,29 @@ function startedAtLabel(t) {
   return fmtTime(t.server_start_time);
 }
 
+function teamIdSortValue(teamId) {
+  const m = String(teamId || '').toUpperCase().match(/(\d+)$/);
+  if (m) return Number(m[1]);
+  return Number.MAX_SAFE_INTEGER;
+}
+
+function compareTeamIdsAsc(a, b) {
+  const aNum = teamIdSortValue(a.team_id);
+  const bNum = teamIdSortValue(b.team_id);
+  if (aNum !== bNum) return aNum - bNum;
+  return String(a.team_id || '').localeCompare(String(b.team_id || ''), undefined, {
+    numeric: true,
+    sensitivity: 'base',
+  });
+}
+
 function renderTeams() {
   const filter = _filterText.toLowerCase();
   const rows   = _allTeams.filter(t =>
     !filter ||
     t.team_id.toLowerCase().includes(filter) ||
     (t.team_name || '').toLowerCase().includes(filter)
-  );
+  ).sort(compareTeamIdsAsc);
 
   Dom.teamCount.textContent = `(${rows.length}/${_allTeams.length})`;
 
