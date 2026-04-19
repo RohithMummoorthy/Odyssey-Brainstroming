@@ -75,6 +75,7 @@ def create_app(config_object: type = Config) -> Flask:
     def health():
         return jsonify(
             {
+                "message":   "hi",
                 "status":    "ok",
                 "timestamp": datetime.now(timezone.utc).isoformat(),
             }
